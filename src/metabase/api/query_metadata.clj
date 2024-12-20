@@ -7,8 +7,10 @@
    [metabase.lib.util :as lib.util]
    [metabase.models.interface :as mi]
    [metabase.util :as u]
+   [metabase.util.log :as log]
    [metabase.util.malli :as mu]
-   [toucan2.core :as t2]))
+   [toucan2.core :as t2]
+   ))
 
 (defn- get-databases
   [ids]
@@ -61,6 +63,7 @@
         database-ids              (into query-database-ids
                                         (keep :db_id)
                                         tables)]
+    (log/info source-ids "-" source-table-ids "-" source-card-ids "-" source-tables "-" fk-target-field-ids "-"fk-target-tables "-" tables "-" template-tag-field-ids "-" query-database-ids "-" database-ids)
     {;; TODO: This is naive and issues multiple queries currently. That's probably okay for most dashboards,
      ;; since they tend to query only a handful of databases at most.
      :databases (sort-by :id (get-databases database-ids))

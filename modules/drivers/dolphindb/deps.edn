@@ -1,0 +1,4 @@
+{:paths
+ ["src" "resources"]
+ :deps
+ {com.dolphindb/jdbc {:mvn/version "3.00.2.0"}}}

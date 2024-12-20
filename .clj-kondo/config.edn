@@ -201,6 +201,7 @@
     (metabase.util.regex/rx [opt])
     (metabase.util/prog1 [<>])
     (taoensso.nippy/extend-freeze)
+    (toucan2.core/with-transaction)
     (taoensso.nippy/extend-thaw)]}
 
   :deprecated-var

@@ -1,0 +1,24 @@
+info:
+  name: Metabase DolphinDB Driver
+  version: 1.0.0-SNAPSHOT
+  description: Allows Metabase to connect to DolphinDB databases.
+driver:
+  name: dolphindb
+  display-name: DolphinDB
+  lazy-load: true
+  parent: sql-jdbc
+  connection-properties:
+    - host
+    - merge:
+        - port
+        - placeholder: 8848
+    - merge:
+        - dbname
+        - placeholder: dfs://db
+    - user
+    - password
+init:
+  - step: load-namespace
+    namespace: metabase.driver.dolphindb
+  - step: register-jdbc-driver
+    class: com.dolphindb.jdbc.Driver

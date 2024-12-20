@@ -389,6 +389,7 @@
 
 (defmethod do-with-connection-with-options :sql-jdbc
   [driver db-or-id-or-spec options f]
+  ;; (log/info "------do-with-connnection -with-optioins-----" db-or-id-or-spec)
   (do-with-resolved-connection
    driver
    db-or-id-or-spec
@@ -470,7 +471,7 @@
 (defsetting sql-jdbc-fetch-size
   "Fetch size for result sets. We want to ensure that the jdbc ResultSet objects are not realizing the entire results
   in memory."
-  :default 500
+  :default 0
   :type :integer
   :visibility :internal)
 
@@ -637,13 +638,15 @@
   [driver ^ResultSet rs ^ResultSetMetaData rsmeta]
   (let [fns (mapv #(read-column-thunk driver rs rsmeta (long %))
                   (column-range rsmeta))]
+    (log/info "---------row-thunk-------------" fns)
     (log-readers driver rsmeta fns)
     (let [thunk (if (seq fns)
                   (perf/juxt* fns)
                   (constantly []))]
       (fn row-thunk* []
-        (when (.next rs)
-          (thunk))))))
+        (if (.next rs)
+          (thunk)
+          (log/info "---------row-thunk-------------" "next is false"))))))
 
 (defmethod column-metadata :sql-jdbc
   [driver ^ResultSetMetaData rsmeta]
@@ -676,6 +679,9 @@
 
   ([driver ^ResultSet rs ^ResultSetMetaData rsmeta canceled-chan]
    (let [row-thunk (row-thunk driver rs rsmeta)]
+     (log/info "----------reducible-rows:row-thunk-----------" row-thunk)
+     (log/info "----------reducible-rows:canceled-chan-----------" canceled-chan)
+     (log/info "----------reducible-rows:result-----------" qp.reducible/reducible-rows row-thunk canceled-chan)
      (qp.reducible/reducible-rows row-thunk canceled-chan))))
 
 (defmulti inject-remark
@@ -690,6 +696,10 @@
 (defmethod inject-remark :default
   [_ sql remark]
   (str "-- " remark "\n" sql))
+
+(defn- process-sql
+  [sql]
+  (u/lower-case-en (str/replace (str/replace sql #"[a-zA-Z0-9]+\.([a-zA-Z0-9]+\.[a-zA-Z0-9]+)" "$1") #"ORDER\sBY\s[a-zA-Z0-9]+\.([a-zA-Z0-9]+)" "ORDER BY $1")))
 
 (defn execute-reducible-query
   "Default impl of [[metabase.driver/execute-reducible-query]] for sql-jdbc drivers."
@@ -710,9 +720,18 @@
     (lib.metadata/database (qp.store/metadata-provider))
     {:session-timezone (qp.timezone/report-timezone-id-if-supported driver (lib.metadata/database (qp.store/metadata-provider)))}
     (fn [^Connection conn]
-      (with-open [stmt          (statement-or-prepared-statement driver conn sql params qp.pipeline/*canceled-chan*)
+      (with-open [stmt          (statement-or-prepared-statement driver conn (process-sql sql) params qp.pipeline/*canceled-chan*)
                   ^ResultSet rs (try
-                                  (execute-statement-or-prepared-statement! driver stmt max-rows params sql)
+                                  (log/info "----------execute-reducible-query-----------"{:driver driver
+                                             :sql    (str/split-lines (driver/prettify-native-form driver sql)) 
+                                             :native-sql sql
+                                             :process-sql (process-sql sql)
+                                             :type-sql (type sql)                                              
+                                             :params params
+                                             :type   qp.error-type/invalid-query})
+                                  ;; (if (= driver :dolphindb)
+                                    ;; (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql))
+                                  (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql))
                                   (catch Throwable e
                                     (throw (ex-info (tru "Error executing query: {0}" (ex-message e))
                                                     {:driver driver
@@ -722,6 +741,7 @@
                                                     e))))]
         (let [rsmeta           (.getMetaData rs)
               results-metadata {:cols (column-metadata driver rsmeta)}]
+          (log/info "----------execute-reducible-query-----------" results-metadata)
           (try (respond results-metadata (reducible-rows driver rs rsmeta qp.pipeline/*canceled-chan*))
                ;; Following cancels the statment on the dbms side.
                ;; It avoids blocking `.close` call, in case we reduced the results subset eg. by means of
@@ -731,7 +751,7 @@
                (finally
                  ;; TODO: Following `when` is in place just to find out if vertica is flaking because of cancelations.
                  ;;       It should be removed afterwards!
-                 (when-not (= :vertica driver)
+                 (when-not (or (= :dolphindb driver)(= :vertica driver))
                    (try (.cancel stmt)
                         (catch SQLFeatureNotSupportedException _
                           (log/warnf "Statemet's `.cancel` method is not supported by the `%s` driver."

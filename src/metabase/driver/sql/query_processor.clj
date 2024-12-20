@@ -1841,4 +1841,5 @@
    outer-query :- :map]
   (let [honeysql-form (mbql->honeysql driver outer-query)
         [sql & args]  (format-honeysql driver honeysql-form)]
+    (log/info "----------mbql->native:honeysql-form---------"honeysql-form)
     {:query sql, :params args}))

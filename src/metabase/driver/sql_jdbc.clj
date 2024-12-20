@@ -15,6 +15,7 @@
    [metabase.driver.sync :as driver.s]
    [metabase.query-processor.writeback :as qp.writeback]
    [metabase.util.honey-sql-2 :as h2x]
+   [metabase.util.log :as log]
    [metabase.util.malli :as mu])
   (:import
    (java.sql Connection)))
@@ -47,6 +48,7 @@
 
 (defmethod driver/can-connect? :sql-jdbc
   [driver details]
+  (log/info "-------------can-connect?------------------")
   (sql-jdbc.conn/can-connect? driver details))
 
 (defmethod driver/table-rows-seq :sql-jdbc

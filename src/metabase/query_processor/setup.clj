@@ -125,7 +125,7 @@
           database-id (resolve-database-id query)
           query       (cond-> query
                         database-id (assoc :database database-id))]
-      (f query))))
+      (f query))));;;
 
 (mu/defn- maybe-attach-metadata-provider-to-query :- ::qp.schema/query
   [query :- ::qp.schema/query]
@@ -229,7 +229,7 @@
              f
              setup-middleware)]
       (binding [*has-setup* true]
-        (f query)))))
+        (f query)))));;;
 
 (defmacro with-qp-setup
   "Execute `body` with things like the QP Store, driver, and Database-local Settings resolved and bound as needed, and

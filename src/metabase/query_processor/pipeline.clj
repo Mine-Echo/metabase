@@ -55,6 +55,9 @@
   "Called by [[*run*]] (inside the `respond` callback provided by it) to reduce results of query. Reduces results, then
   calls [[*result*]] with the reduced results."
   [rff metadata reducible-rows]
+  (log/info "----------*reduce*:rff-----------" rff)
+  (log/info "----------*reduce*:metadata-----------" metadata)
+  (log/info "----------*reduce*:reducible-rows-----------" reducible-rows)
   (when-not (canceled?)
     (let [[status rf-or-e] (try
                              [::ready-to-reduce (rff metadata)]
@@ -65,6 +68,7 @@
           [status result]  (case status
                              ::ready-to-reduce
                              (try
+                               (log/info "----------*reduce*-----------" rf-or-e)
                                [::success (transduce (fn [rf]
                                                        (fn wrapper
                                                          ([] (rf))
@@ -76,6 +80,7 @@
                                                      rf-or-e
                                                      reducible-rows)]
                                (catch Throwable e
+                                ;;  (log/info "----------*reduce*-----------" e)
                                  [::error (ex-info (i18n/tru "Error reducing result rows: {0}" (ex-message e))
                                                    {:type qp.error-type/qp}
                                                    e)]))

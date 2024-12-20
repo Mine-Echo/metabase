@@ -11,8 +11,9 @@
    [metabase.query-processor :as qp]
    [metabase.query-processor.interface :as qp.i]
    [metabase.util :as u]
+   [metabase.util.log :as log]
    [metabase.util.malli :as mu]
-   [metabase.util.malli.schema :as ms]
+   [metabase.util.malli.schema :as ms] 
    [toucan2.core :as t2]))
 
 (defn- partition-field->filter-form
@@ -62,6 +63,9 @@
    (table-query table-id mbql-query nil))
   ([table-id mbql-query rff]
    {:pre [(integer? table-id)]}
+   (log/info "----------table-query------------"(-> mbql-query
+                                                                       (assoc :source-table table-id)
+                                                                       add-required-filters-if-needed))
    (binding [qp.i/*disable-qp-logging* true]
      (qp/process-query
       {:type       :query

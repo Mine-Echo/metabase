@@ -374,6 +374,7 @@
                              [:fields [:target :has_field_values] :has_field_values :dimensions :name_field]
                              :segments
                              :metrics)]
+      (log/info "----------batch-fetch-query-metadatas*------" tables)
       (for [table tables]
         (-> table
             (m/dissoc-in [:db :details])

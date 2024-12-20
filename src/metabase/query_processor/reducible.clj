@@ -41,6 +41,7 @@
    (reducible-rows row-thunk qp.pipeline/*canceled-chan*))
 
   ([row-thunk canceled-chan]
+   (log/info "---------reducible-rows---------")
    (reify
      clojure.lang.IReduceInit
      (reduce [_ rf init]
@@ -56,7 +57,7 @@
            (if-let [row (row-thunk)]
              (recur (rf acc row))
              (do
-               (log/trace "All rows consumed.")
+               (log/info "All rows consumed.")
                acc))))))))
 
 (mu/defn combine-additional-reducing-fns

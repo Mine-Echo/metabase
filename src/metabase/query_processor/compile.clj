@@ -9,6 +9,7 @@
    [metabase.query-processor.setup :as qp.setup]
    [metabase.util :as u]
    [metabase.util.i18n :as i18n]
+   [metabase.util.log :as log]
    [metabase.util.malli :as mu]
    [metabase.util.malli.registry :as mr]))
 
@@ -19,6 +20,8 @@
 
 (defn- compile* [{query-type :type, :as query}]
   (assert (not (:qp/compiled query)) "This query has already been compiled!")
+  (log/info "-------compile*:query---------" query)
+  (log/info "-------compile*:native---------" (driver/mbql->native driver/*driver* query))
   (if (= query-type :native)
     (:native query)
     (driver/mbql->native driver/*driver* query)))
@@ -39,7 +42,7 @@
 (mu/defn compile :- ::compiled
   "Preprocess and compile a query, if needed. Returns just the resulting 'inner' native query."
   [query :- ::qp.schema/query]
-  (qp.setup/with-qp-setup [query query]
+  (qp.setup/with-qp-setup [query query];;;
     (compile-preprocessed (qp.preprocess/preprocess query))))
 
 (mu/defn attach-compiled-query :- ::qp.schema/query
@@ -71,4 +74,4 @@
   [query :- ::qp.schema/query]
   (or (:qp/compiled-inline query)
       (binding [driver/*compile-with-inline-parameters* true]
-        (compile (dissoc query :qp/compiled)))))
+        (compile (dissoc query :qp/compiled)))));;;

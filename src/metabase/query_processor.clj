@@ -43,9 +43,13 @@
 
 (defn- process-query** [query rff]
   (qp.debug/debug> (list `process-query query))
+  (log/info "---------process-query**:query---------" query)
   (let [preprocessed (qp.preprocess/preprocess query)
         compiled     (qp.compile/attach-compiled-query preprocessed)
         rff          (qp.postprocess/post-processing-rff preprocessed rff)]
+    (log/info "---------process-query**:preprocessed---------" preprocessed)
+    (log/info "---------process-query**:compiled---------" compiled)
+    (log/info "---------process-query**:rff---------" rff)
     (qp.execute/execute compiled rff)))
 
 (def ^:private ^{:arglists '([query rff])} process-query* nil)

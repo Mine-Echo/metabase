@@ -26,6 +26,8 @@
 (mu/defn db-metadata :- i/DatabaseMetadata
   "Get basic Metadata about a `database` and its Tables. Doesn't include information about the Fields."
   [database :- i/DatabaseInstance]
+  (log/info "----------db-metadata----------" database)
+  (log/info "----------db-metadata----------" (driver.u/database->driver database))
   (log-if-error "db-metadata"
     (driver/describe-database (driver.u/database->driver database) database)))
 

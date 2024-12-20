@@ -52,7 +52,7 @@
   ;; Using our SQL compiler here to get portable LIMIT (e.g. `SELECT TOP n ...` for SQL Server/Oracle)
   (let [tru      (sql.qp/->honeysql driver true)
         table    (sql.qp/->honeysql driver (h2x/identifier :table schema table))
-        honeysql {:select [[tru :_]]
+        honeysql {:select [[tru :col]]
                   :from   [[table]]
                   :where  [:inline [:not= 1 1]]}
         honeysql (sql.qp/apply-top-level-clause driver :limit honeysql {:limit 0})]
@@ -83,17 +83,25 @@
                      (pr-str table-name))
                 (pr-str sql-args))
     (try
+      (log/info "------------sql----------" sql-args)
       (execute-select-probe-query driver conn sql-args)
       (log/trace "SELECT privileges confirmed")
       true
       (catch Throwable e
         (log/trace e "Assuming no SELECT privileges: caught exception")
+        (log/info e "Assuming no SELECT privileges: caught exception")
         (when-not (.getAutoCommit conn)
           (.rollback conn))
         false))))
 
 (defn- jdbc-get-tables
   [driver ^DatabaseMetaData metadata catalog schema-pattern tablename-pattern types]
+  (log/info "-------jdbc-get-tables:driver--------" driver )
+  (log/info "-------jdbc-get-tables:metadata--------" metadata)
+  (log/info "-------jdbc-get-tables:catalog--------" catalog)
+  (log/info "-------jdbc-get-tables:schema-pattern--------" schema-pattern)
+  (log/info "-------jdbc-get-tables:tablename-pattern--------" tablename-pattern)
+  (log/info "-------jdbc-get-tables:types--------" types)
   (sql-jdbc.sync.common/reducible-results
    #(.getTables metadata catalog
                 (some->> schema-pattern (driver/escape-entity-name-for-metadata driver))
@@ -116,6 +124,9 @@
   ;; this by passing in `"%"` instead -- consider making this the default behavior. See this Slack thread
   ;; https://metaboat.slack.com/archives/C04DN5VRQM6/p1706220295862639?thread_ts=1706156558.940489&cid=C04DN5VRQM6 for
   ;; more info.
+  (log/info "-----------db-tables----------" (vec(jdbc-get-tables driver metadata db-name-or-nil schema-or-nil "%"
+                                           ["TABLE" "PARTITIONED TABLE" "VIEW" "FOREIGN TABLE" "MATERIALIZED VIEW"
+                                            "EXTERNAL TABLE" "DYNAMIC_TABLE"])))
   (jdbc-get-tables driver metadata db-name-or-nil schema-or-nil "%"
                    ["TABLE" "PARTITIONED TABLE" "VIEW" "FOREIGN TABLE" "MATERIALIZED VIEW"
                     "EXTERNAL TABLE" "DYNAMIC_TABLE"]))
@@ -146,9 +157,10 @@
         ;; table on postgres, so we need to use the select method on them
         (if (#{[:postgres "FOREIGN TABLE"]}
              [driver ttype])
-          (sql-jdbc.sync.interface/have-select-privilege? driver conn schema table)
-          (contains? schema+table-with-select-privileges [schema table]))))
+          (do (log/info "-----------have-select-privilege-fn1-------"(sql-jdbc.sync.interface/have-select-privilege? driver conn schema table))(sql-jdbc.sync.interface/have-select-privilege? driver conn schema table))
+          (do (log/info "-----------contains?---------------"(contains? schema+table-with-select-privileges [schema table]))(contains? schema+table-with-select-privileges [schema table])))))
     (fn [{schema :schema table :name}]
+      (log/info "-----------have-select-privilege-fn2-------" (sql-jdbc.sync.interface/have-select-privilege? driver conn schema table))
       (sql-jdbc.sync.interface/have-select-privilege? driver conn schema table))))
 
 (defn fast-active-tables
@@ -163,6 +175,9 @@
         syncable-schemas          (sql-jdbc.sync.interface/filtered-syncable-schemas driver conn metadata
                                                                                      schema-inclusion-filters schema-exclusion-filters)
         have-select-privilege-fn? (have-select-privilege-fn driver conn)]
+    (log/info "-------fast-active-tables:metadata-------"metadata)
+    (log/info "-------fast-active-tables:syncable-schemas-------" syncable-schemas)
+    (log/info "-------fast-active-tables:have-select-privilege-fn?-------" have-select-privilege-fn?)
     (eduction (mapcat (fn [schema]
                         (eduction
                          (comp (filter have-select-privilege-fn?)
@@ -218,4 +233,9 @@
             [inclusion-patterns
              exclusion-patterns] (when (some? schema-filter-prop)
                                    (driver.s/db-details->schema-filter-patterns (:name schema-filter-prop) database))]
+        (log/info "---------JDBC:describe-database:conn--------" conn)
+        (log/info "---------JDBC:describe-database:schema-filter-prop--------" schema-filter-prop)
+        (log/info "---------JDBC:describe-database:database--------" database)
+        (log/info "---------JDBC:describe-database:inclusion-patterns--------" inclusion-patterns)
+        (log/info "---------JDBC:describe-database:exclusion-patterns--------" exclusion-patterns)
         (into #{} (sql-jdbc.sync.interface/active-tables driver conn inclusion-patterns exclusion-patterns)))))})
