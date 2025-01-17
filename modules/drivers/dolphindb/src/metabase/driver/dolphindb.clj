@@ -3,22 +3,22 @@
   (:require
   ;;  [clojure.string :as str]
   ;;  [clojure.java.jdbc :as jdbc]
-   [metabase.driver :as driver] 
+   [metabase.driver :as driver]
   ;;  [metabase.driver.sql :as driver.sql]
-  ;;  [metabase.driver.sql-jdbc.common :as sql-jdbc.common] 
+  ;;  [metabase.driver.sql-jdbc.common :as sql-jdbc.common]
    [metabase.driver.sql-jdbc.connection :as sql-jdbc.conn]
-   [metabase.driver.sql-jdbc.execute :as sql-jdbc.execute] 
+   [metabase.driver.sql-jdbc.execute :as sql-jdbc.execute]
    [metabase.driver.sql-jdbc.sync :as sql-jdbc.sync]
    [metabase.driver.sql-jdbc.sync.common :as sql-jdbc.sync.common]
    [metabase.driver.sql-jdbc.sync.describe-database :as sql-jdbc.describe-database]
    [metabase.driver.sql.query-processor :as sql.qp]
    [metabase.driver.sync :as driver.s]
-   [metabase.driver.util :as driver.u] 
+   [metabase.driver.util :as driver.u]
   ;;  [metabase.driver.sql-jdbc.sync.interface :as sql-jdbc.sync.interface]
   ;;  [metabase.lib.schema.common :as lib.schema.common]
    [metabase.util.log :as log]
    [metabase.util.malli :as mu])
-  (:import 
+  (:import
    (java.sql Connection DatabaseMetaData ResultSet)
    (java.sql Connection DatabaseMetaData ResultSet))
 )
@@ -41,12 +41,12 @@
                               :basic-aggregations true
                               :standard-deviation-aggregations true
                               :expressions true
-                              :native-parameters true 
-                              :expression-aggregations true 
+                              :native-parameters true
+                              :expression-aggregations true
                               :nested-queries true
                               :native-parameter-card-reference false
-                              :persist-models false 
-                              :persist-models-enabled false 
+                              :persist-models false
+                              :persist-models-enabled false
                               :binning false
                               :case-sensitivity-string-filter-options true
                               :left-join true
@@ -60,29 +60,29 @@
                               :date-arithmetics true
                               :now true
                               :convert-timezone false
-                              :datetime-diff true 
+                              :datetime-diff true
                               :actions false
                               :table-privileges false  ;;表级权限
                               :uploads false
                               :schemas true
                               :actions/custom false
-                              :test/jvm-timezone-setting false 
-                              :connection-impersonation false 
-                              :connection-impersonation-requires-role false 
-                              :native-requires-specified-collection false 
+                              :test/jvm-timezone-setting false
+                              :connection-impersonation false
+                              :connection-impersonation-requires-role false
+                              :native-requires-specified-collection false
                               :index-info false
                               :describe-fks false
-                              :describe-fields false 
+                              :describe-fields false
                               :upload-with-auto-pk false
-                              :fingerprint true 
+                              :fingerprint true
                               :connection/multiple-databases true
-                              :identifiers-with-spaces true 
+                              :identifiers-with-spaces true
                               :uuid-type true
                               :temporal/requires-default-unit false
                               :window-functions/cumulative true
                               :window-functions/offset true
                               :parameterized-sql true
-                              :test/dynamic-dataset-loading false 
+                              :test/dynamic-dataset-loading false
                               }]
   (defmethod driver/database-supports? [:dolphindb feature] [_driver _feature _db] supported?))
 
@@ -124,7 +124,7 @@
     :DT_INT            :type/Integer ;
     :DT_INT128         :type/Integer
     :DT_IPADDR         :type/* ;java无
-    :DT_LONG           :type/Integer ; 
+    :DT_LONG           :type/Integer ;
     :DT_MONTH          :type/*
     :DT_SECOND         :type/Time
     :DT_POINT          :type/* ;java无

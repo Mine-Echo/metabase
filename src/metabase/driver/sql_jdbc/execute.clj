@@ -697,9 +697,10 @@
   [_ sql remark]
   (str "-- " remark "\n" sql))
 
+;  暂时使用regex去除schema_name.table_name.column_name中的schema_name以便测试，之后需要通过实现driver/mbql->native方法来解决
 (defn- process-sql
   [sql]
-  (u/lower-case-en (str/replace (str/replace sql #"[a-zA-Z0-9]+\.([a-zA-Z0-9]+\.[a-zA-Z0-9]+)" "$1") #"ORDER\sBY\s[a-zA-Z0-9]+\.([a-zA-Z0-9]+)" "ORDER BY $1")))
+  (u/lower-case-en (str/replace (str/replace sql #"[_a-zA-Z0-9]+\.([_a-zA-Z0-9]+\.[_a-zA-Z0-9]+)" "$1") #"ORDER\sBY\s[_a-zA-Z0-9]+\.([_a-zA-Z0-9]+)" "ORDER BY $1")))
 
 (defn execute-reducible-query
   "Default impl of [[metabase.driver/execute-reducible-query]] for sql-jdbc drivers."
@@ -723,15 +724,15 @@
       (with-open [stmt          (statement-or-prepared-statement driver conn (process-sql sql) params qp.pipeline/*canceled-chan*)
                   ^ResultSet rs (try
                                   (log/info "----------execute-reducible-query-----------"{:driver driver
-                                             :sql    (str/split-lines (driver/prettify-native-form driver sql)) 
+                                             :sql    (str/split-lines (driver/prettify-native-form driver sql))
                                              :native-sql sql
                                              :process-sql (process-sql sql)
-                                             :type-sql (type sql)                                              
+                                             :type-sql (type sql)
                                              :params params
                                              :type   qp.error-type/invalid-query})
-                                  ;; (if (= driver :dolphindb)
-                                    ;; (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql))
-                                  (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql))
+                                  (if (= driver :dolphindb)
+                                    (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql))
+                                  (execute-statement-or-prepared-statement! driver stmt max-rows params (process-sql sql)))
                                   (catch Throwable e
                                     (throw (ex-info (tru "Error executing query: {0}" (ex-message e))
                                                     {:driver driver
